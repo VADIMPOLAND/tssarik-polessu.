@@ -1,75 +1,106 @@
-let order = []; // Массив для хранения выбранных пицц
-let isRegistered = false; // Статус регистрации пользователя
+let order = [];
+let isRegistered = false;
+let currentUser = '';
 
-// Функция для отображения формы регистрации
 function showLoginForm() {
     document.getElementById('login-form').style.display = 'block';
 }
 
-// Функция для регистрации пользователя
 function register() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
     if (username && password) {
-        isRegistered = true; // Устанавливаем статус регистрации в true
-        document.getElementById('login-form').style.display = 'none'; // Скрываем форму регистрации
-        document.getElementById('account-info').innerHTML = `Привет, ${username}`; // Показываем имя пользователя
-        document.getElementById('menu').style.display = 'block'; // Показываем меню пицц
+        isRegistered = true;
+        currentUser = username;
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('account-info').innerHTML = `Привет, ${currentUser} <span onclick="logout()" style="cursor: pointer; color: #ff6347;">(Выйти)</span>`;
+        document.getElementById('menu').style.display = 'block';
     } else {
-        alert('Пожалуйста, заполните все поля!'); // Если поля пустые, выводим предупреждение
+        alert('Пожалуйста, заполните все поля!');
     }
 }
 
-// Функция для добавления пиццы в заказ
+function logout() {
+    isRegistered = false;
+    currentUser = '';
+    order = [];
+    document.getElementById('account-info').innerHTML = `<span onclick="showLoginForm()">Войти / Регистрация</span>`;
+    document.getElementById('menu').style.display = 'none';
+    document.getElementById('cart').style.display = 'none';
+    document.getElementById('order-summary').style.display = 'none';
+    updateCart();
+}
+
 function orderPizza(pizzaName, price) {
-    if (!isRegistered) { // Если пользователь не зарегистрирован, не разрешаем заказать
+    if (!isRegistered) {
         alert('Вы должны зарегистрироваться, чтобы сделать заказ!');
         return;
     }
-
-    // Добавляем выбранную пиццу в заказ
     order.push({ pizzaName, price });
-    updateCart(); // Обновляем корзину
+    updateCart();
 }
 
-// Функция для обновления корзины
 function updateCart() {
     const cartItems = document.getElementById('cart-items');
-    cartItems.innerHTML = ''; // Очищаем текущие элементы корзины
-
+    cartItems.innerHTML = '';
     let totalPrice = 0;
     order.forEach((item, index) => {
-        cartItems.innerHTML += `
-            ${item.pizzaName} - ${item.price} BYN
-            <button onclick="removePizza(${index})">Удалить</button><br>
-        `;
+        cartItems.innerHTML += `<div>${item.pizzaName} - ${item.price} BYN <button onclick="removePizza(${index})">Удалить</button></div>`;
         totalPrice += item.price;
     });
-
-    cartItems.innerHTML += `Итого: ${totalPrice} BYN`;
+    cartItems.innerHTML += `<div style="font-weight: bold;">Итого: ${totalPrice} BYN</div>`;
+    if (order.length === 0) {
+        document.getElementById('cart').style.display = 'none';
+    }
 }
 
-// Функция для удаления пиццы из корзины
 function removePizza(index) {
     order.splice(index, 1);
-    updateCart(); // Обновляем корзину после удаления
+    updateCart();
 }
 
-// Функция для отображения корзины
 function toggleCart() {
     const cart = document.getElementById('cart');
+    if (!isRegistered) {
+        alert('Вы должны зарегистрироваться, чтобы увидеть корзину!');
+        return;
+    }
     cart.style.display = (cart.style.display === 'block') ? 'none' : 'block';
 }
 
-// Функция для размещения заказа
 function placeOrder() {
     if (order.length > 0) {
-        alert('Ваш заказ принят! Пиццы будут доставлены через 30 минут.');
-        order = []; // Очищаем корзину после оформления заказа
-        updateCart(); // Обновляем корзину
-        toggleCart(); // Скрываем корзину
+        document.getElementById('cart').style.display = 'none';
+        document.getElementById('order-summary').style.display = 'block';
+        updateOrderSummary();
     } else {
         alert('Корзина пуста, пожалуйста, выберите пиццы для заказа.');
+    }
+}
+
+function updateOrderSummary() {
+    const orderDetails = document.getElementById('order-details');
+    orderDetails.innerHTML = '';
+    let totalPrice = 0;
+    order.forEach(item => {
+        orderDetails.innerHTML += `${item.pizzaName} - ${item.price} BYN<br>`;
+        totalPrice += item.price;
+    });
+    orderDetails.innerHTML += `<strong>Общая сумма: ${totalPrice} BYN</strong>`;
+}
+
+function confirmOrder() {
+    if (order.length > 0) {
+        alert(`Ваш заказ принят, ${currentUser}! Пиццы будут доставлены через 30 минут.`);
+        order = [];
+        document.getElementById('order-summary').style.display = 'none';
+        updateCart();
+        document.getElementById('order-status').innerHTML = 'Заказ успешно оформлен!';
+        setTimeout(() => {
+            document.getElementById('order-status').innerHTML = '';
+        }, 5000);
+    } else {
+        alert('Корзина пуста!');
     }
 }
